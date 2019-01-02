@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="cfunc_t">
+    <DisplayString>{maturity} function at {entry_ea}</DisplayString>
+    <Expand>
+      <Item Name="body">body</Item>
+      <Item Name="ea">entry_ea</Item>
+      <Item Name="refcnt">refcnt</Item>
+      <Item Name="statebits">statebits</Item>
+    </Expand>
+  </Type>
+
+  <!--
+  cit_empty    = 70,  ///< instruction types start here
+  cit_block    = 71,  ///< block-statement: { ... }
+  cit_expr     = 72,  ///< expression-statement: expr;
+  cit_if       = 73,  ///< if-statement
+  cit_for      = 74,  ///< for-statement
+  cit_while    = 75,  ///< while-statement
+  cit_do       = 76,  ///< do-statement
+  cit_switch   = 77,  ///< switch-statement
+  cit_break    = 78,  ///< break-statement
+  cit_continue = 79,  ///< continue-statement
+  cit_return   = 80,  ///< return-statement
+  cit_goto     = 81,  ///< goto-statement
+  cit_asm      = 82,  ///< asm-statement
+  
+    cblock_t *cblock;   ///< details of block-statement
+    cexpr_t *cexpr;     ///< details of expression-statement
+    cif_t *cif;         ///< details of if-statement
+    cfor_t *cfor;       ///< details of for-statement
+    cwhile_t *cwhile;   ///< details of while-statement
+    cdo_t *cdo;         ///< details of do-statement
+    cswitch_t *cswitch; ///< details of switch-statement
+    creturn_t *creturn; ///< details of return-statement
+    cgoto_t *cgoto;     ///< details of goto-statement
+    casm_t *casm;       ///< details of asm-statement
+  -->
+
+  <Type Name="creturn_t">
+    <DisplayString>return {expr}</DisplayString>
+  </Type>
+
+  <Type Name="cif_t">
+    <DisplayString Condition="ielse != 0">if( {expr} ) {{{*ithen}}} else {{{*ielse}}}</DisplayString>
+    <DisplayString Condition="ielse == 0">if( {expr} ) {{{*ithen}}}</DisplayString>
+    <Expand>
+      <Item Name="condition">expr</Item>
+      <Item Name="then">ithen</Item>
+      <Item Name="else" Condition="ielse != 0">ielse</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ceinsn_t">
+    <DisplayString>{expr}</DisplayString>
+  </Type>
+  
+  <Type Name="cloop_t">
+    <DisplayString>loop ({expr}) do {*body}</DisplayString>
+  </Type>
+
+  <Type Name="cfor_t">
+    <DisplayString>for ({init};{expr};{step}){{{*body}}}</DisplayString>
+    <Expand HideRawView="true">
+      <Item Name="init">init</Item>
+      <Item Name="cond">expr</Item>
+      <Item Name="step">step</Item>
+      <Item Name="body">*body</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="cwhile_t">
+    <DisplayString>while ({expr}) do {*body}</DisplayString>
+  </Type>
+  <Type Name="cdo_t">
+    <DisplayString>do {{{*body}}} while ({expr})</DisplayString>
+    <Expand>
+      <Item Name="body">*body</Item>
+      <Item Name="condition">expr</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="creturn_t">
+    <DisplayString>return {expr}</DisplayString>
+    <Expand HideRawView="true">
+      <Item Name="e">expr</Item>
+    </Expand>
+  </Type>
+  <Type Name="cgoto_t">
+    <DisplayString>goto {label_num}</DisplayString>
+    <Expand HideRawView="true">      
+    </Expand>
+  </Type>
+  
+  
+
+
+  <Type Name="cinsn_t">
+    <DisplayString Condition="op == 71">{*cblock}</DisplayString>
+    <DisplayString Condition="op == 72">{*cexpr}</DisplayString>
+    <DisplayString Condition="op == 73">{*cif}</DisplayString>
+
+    <DisplayString Condition="op == 74">{*cfor}</DisplayString>
+    <DisplayString Condition="op == 75">{*cwhile}</DisplayString>
+    <DisplayString Condition="op == 76">{*cdo}</DisplayString>
+    <DisplayString Condition="op == 77">{*cswitch}</DisplayString>
+    <DisplayString Condition="op == 78">break</DisplayString>
+
+    <DisplayString Condition="op == 79">continue</DisplayString>
+    <DisplayString Condition="op == 80">{*creturn}</DisplayString>
+    <DisplayString Condition="op == 81">{*cgoto}</DisplayString>
+    <DisplayString Condition="op == 82">{*casm}</DisplayString>
+
+    <DisplayString>{op}</DisplayString>
+    <Expand HideRawView="true">
+      <Item Name="block" Condition="op == 71">*cblock</Item>
+      <Item Name="e" Condition="op == 72">*cexpr</Item>
+      <Item Name="if" Condition="op == 73">*cif</Item>
+      <Item Name="for" Condition="op == 74">*cfor</Item>
+      <Item Name="while" Condition="op == 75">*cwhile</Item>
+      <Item Name="do" Condition="op == 76">*cdo</Item>
+      <Item Name="switch" Condition="op == 77">*cswitch</Item>
+
+      <Item Name="return" Condition="op == 80">*creturn</Item>
+      <Item Name="goto" Condition="op == 81">*cgoto</Item>
+      <Item Name="asm" Condition="op == 82">*casm</Item>
+
+    </Expand>
+  </Type>
+
+  <Type Name="cexpr_t">
+    <DisplayString Condition="op == cot_obj">[object at {obj_ea}]</DisplayString>
+    <DisplayString Condition="op == cot_call">[call to {x->obj_ea}]</DisplayString>
+    <DisplayString Condition="op == cot_var">[variable {v.idx,d}]</DisplayString>
+    <DisplayString Condition="op == cot_num">[number {n}]</DisplayString>
+
+    <DisplayString Condition="op == 53">{*x}++</DisplayString>
+    <DisplayString Condition="op == 54">{*x}--</DisplayString>
+    <DisplayString Condition="op == 55">++{*x}</DisplayString>
+    <DisplayString Condition="op == 56">--{*x}</DisplayString>
+    <DisplayString Condition="op == cot_asg">{*x} = {*y}</DisplayString>
+    <!-- TODO: add more operators -->
+    <DisplayString Condition="op == 30">{*x} &lt; {*y}</DisplayString>
+
+
+    <DisplayString>{op}</DisplayString>
+    <Expand HideRawView="true">
+      <Item Name="called object" Condition="op == cot_call">x</Item>
+      <Item Name="arguments" Condition="op == cot_call">a</Item>
+      <Item Name="object ea" Condition="op == cot_obj">obj_ea</Item>
+      <Item Name="number" Condition="op == cot_num">*n</Item>
+      <Item Name="v" Condition="op == cot_var">v</Item>
+
+
+      <Item Name="x" Condition="op &gt;= cot_comma &amp;&amp; op &lt;= cot_memptr">x</Item>
+      <Item Name="y" Condition="(op >= cot_comma &amp;&amp; op &lt;= cot_fdiv) || op == cot_idx">y</Item>
+      <Item Name="type">type</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="cnumber_t">
+    <DisplayString>[number_t {_value}]</DisplayString>
+  </Type>
+
+  <Type Name="qvector&lt;carg_t&gt;">
+    <DisplayString>[{n,d} arguments]</DisplayString>
+
+    <Expand>
+      <IndexListItems>
+        <Size>n</Size>
+        <ValueNode>array[$i]</ValueNode>
+      </IndexListItems>
+    </Expand>
+  </Type>
+
+
+  <Type Name="qstr">
+    <DisplayString>{str,su}</DisplayString>
+  </Type>
+
+  <Type Name="_qstring&lt;char&gt;">
+    <DisplayString>{body.array,s}</DisplayString>
+  </Type>
+
+  <Type Name="qvector&lt;char&gt;">
+    <DisplayString>{array,s}</DisplayString>
+  </Type>
+
+  <Type Name="qvector&lt;*&gt;">
+    <DisplayString Condition="n>1">vector with {n,d} items</DisplayString>
+    <DisplayString Condition="n==1">vector with {n,d} item</DisplayString>
+    <DisplayString Condition="n==0">empty vector</DisplayString>
+
+    <Expand>
+      <IndexListItems>
+        <Size>n</Size>
+        <ValueNode>array[$i]</ValueNode>
+      </IndexListItems>
+    </Expand>
+  </Type>
+
+  <Type Name="qlist&lt;cinsn_t&gt;">
+    <DisplayString Condition="length>1">{length,d} instructions</DisplayString>
+    <DisplayString Condition="length==1">{length,d} instruction</DisplayString>
+    <DisplayString Condition="length==0">no instructions</DisplayString>
+
+    <Expand HideRawView="true">
+      <Item Name="items">node</Item>
+    </Expand>
+
+  </Type>
+
+
+  <Type Name="qlist&lt;*&gt;::listnode_t">
+
+    <DisplayString>nodes</DisplayString>
+    <Expand>
+      <LinkedListItems>
+        <HeadPointer>prev</HeadPointer>
+        <NextPointer>next</NextPointer>
+        <ValueNode>((void*)this)[2]</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+
+  <Type Name="qlist&lt;cinsn_t&gt;::listnode_t">
+    <DisplayString>instructions</DisplayString>
+    <Expand HideRawView="true">
+      <LinkedListItems>
+        <HeadPointer>next</HeadPointer>
+        <NextPointer>next</NextPointer>
+        <ValueNode>*(cinsn_t*)&amp;((char*)this)[16]</ValueNode>
+      </LinkedListItems>
+    </Expand>
+  </Type>
+
+  <!-- <Type Name="qlist&lt;cinsn_t&gt;::datanode_t">
+    <DisplayString>{(cinsn_t*)&amp;((char*)this)[16]}</DisplayString>
+    <Expand>
+      <Item Name="item">(cinsn_t*)&amp;((char*)this)[16]</Item>
+    </Expand>
+  </Type>
+  -->
+</AutoVisualizer>

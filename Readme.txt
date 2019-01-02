@@ -44,4 +44,5 @@ History:
 
  27. Oct 2002:     added compiled plugin for IDA Pro version 4.30.
 
- 05. Sep 2007:     adjusted the code for IDA Pro 5.1          
+ 05. Sep 2007:     adjusted the code for IDA Pro 5.1    
+ 
