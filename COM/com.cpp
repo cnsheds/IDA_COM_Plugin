@@ -48,23 +48,16 @@
 #include <ole2.h>
 #include <imagehlp.h>
 
-// IDA SDK includes
 
-#include <ida.hpp>
-#include <idp.hpp>
-#include <name.hpp>
-#include <loader.hpp>
-#include <diskio.hpp>
-#include <typeinf.hpp>
-#include <auto.hpp>
-#include <bytes.hpp>
-
+#include "Common.h"
 #include "CoClassSyms.h"
 #include "stringify.h"
 #include "COM.H"
 
-// set to 1 to show some debug messages
+//=
+#pragma comment(lib, "Dbghelp.lib")
 
+// set to 1 to show some debug messages
 #define SHOW_DBG		0
 
 // internal declarations
@@ -111,11 +104,11 @@ void my_warning(const char *message,...)
 		{
 			// show dialog box with
 
-			if(askbuttons_cv("~O~k", "~S~ilent", "~C~ancel", 1, message, va) == 0)
+			if(vask_buttons("~O~k", "~S~ilent", "~C~ancel", 1, message, va) == 0)
 			{
 				// confirm "SILENT" mode
 
-				if(askyn_c(1, "This will turn off all error messages for the plugin. "
+				if(ask_yn(1, "This will turn off all error messages for the plugin. "
 							  "The error messages will only appear in the message window. "
 				              "Do you want to turn off the error messages ?") == 1 )
 					g_bSilent = TRUE;
@@ -181,7 +174,7 @@ __declspec (dllexport) BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for
 
 		// determine TXT/GUI version
 
-		g_bGUIVersion = (callui(ui_get_hwnd).vptr != NULL);
+		g_bGUIVersion = is_idaq();
 #if SHOW_DBG
 		my_warning("DLL_PROCESS_ATTACH.");
 #endif
@@ -210,7 +203,7 @@ internally. This can be used to customize apply_cdecl() if required
 Attention: not sure if this is still true for IDA 5.1 !
 ----------------------------------------------------------------------*/
 
-#if 1 // set to 1 to use the code instead of the built-in version of apply_cdecl()
+#if 0 // set to 1 to use the code instead of the built-in version of apply_cdecl()
 
 bool ida_export apply_cdecl(ea_t ea, const char *decl)
 {
@@ -234,7 +227,7 @@ Check if address is the start of a function
 BOOL IsFunctionStart(ea_t ea)
 {
 	func_t *fn = get_func(ea);
-	return (fn && fn->startEA == ea);
+	return (fn && fn->start_ea == ea);
 }
 
 /*----------------------------------------------------------------------
@@ -246,33 +239,32 @@ BOOL CleanupIfInsideOpcode(ea_t ea)
 {
 	// check if we are in the middle of an object
 
-    if(!isTail(getFlags(ea)))
+    if(!is_tail(get_flags(ea)))
 		return TRUE;
 
 	// make unknown, expand
-
-	do_unknown(get_item_head(ea), true);
+	setUnknown(get_item_head(ea), true);
 
 	// wait till auatoanalysis is done, cause expanding
 	// to "unknown" happends in the background if second
 	// parameter of do_unknown() is true
 
-	autoWait();
+	auto_wait();
 
 	// check if there already exists a function
 	// if so, truncate it
 
-	func_t nfn;
-	if(find_func_bounds(ea, &nfn, FIND_FUNC_DEFINE) == FIND_FUNC_EXIST)
+	func_t* pnfn = get_func(ea);
+	if(pnfn && find_func_bounds(pnfn, FIND_FUNC_DEFINE) == FIND_FUNC_EXIST)
 	{
-		if(func_setend(ea, ea))
+		if(set_func_end(ea, ea))
 			return FALSE;
 
 		// truncating a function may cause autoanalysis
 		// to start again. Wait till autoanalysis is done to
 		// get best results
 
-		autoWait();
+		 auto_wait();
 	}
 
 	// create function, return result
@@ -348,13 +340,13 @@ void ProcessFunction(FUNCDESC *pFuncDesc, LPTYPEINFO pITypeInfo, DWORD pFunction
 	{
 		// truncate function just above new function
 
-		if(func_setend(ea, ea))
+		if(set_func_end(ea, ea))
 		{
 			// truncating a function may cause autoanalysis
 			// to start again. Wait till autoanalysis is done to
 			// get best results
 
-			autoWait();
+			 auto_wait();
 
 			// Tell IDA kernel: create the function
 
@@ -448,8 +440,7 @@ void ProcessFunction(FUNCDESC *pFuncDesc, LPTYPEINFO pITypeInfo, DWORD pFunction
 			if(!bCmdEqual)
 			{
 				// tell IDA to add a comment (anterior)
-
-				add_long_cmt(ea, 1, szBuf);
+				add_extra_cmt(ea, true, szBuf);
 			}
 
 			g_nNoFunctions++;
@@ -468,13 +459,12 @@ void ProcessFunction(FUNCDESC *pFuncDesc, LPTYPEINFO pITypeInfo, DWORD pFunction
 		c_stringifyCOMMethod(pFuncDesc, pITypeInfo, szDecl, sizeof(szDecl), FALSE);
 
 		// tell IDA to use the declaration to ameliorate the disassembly
-		
-		if(!apply_cdecl(ea, szDecl))
+		til_t* ida_ti = (til_t*)get_idati();
+		if(!ida_ti || !apply_cdecl(ida_ti, ea, szDecl))
 		{
 			// If using the "01234567: xxxx" style for warnings,
 			// the GUI version permits to jump to an address by  
 			// double clicking on the message line.
-
 			msg("%08X: cannot set type for %s\n", ea, szDecl);
 		}
 	}
@@ -495,7 +485,7 @@ void ProcessFunction(FUNCDESC *pFuncDesc, LPTYPEINFO pITypeInfo, DWORD pFunction
 //
 //
 
-void plugin_main(int)
+bool idaapi plugin_main(size_t)
 {
 #if SHOW_DBG
 	my_warning("plugin_main() called.");
@@ -511,26 +501,26 @@ void plugin_main(int)
 
 	// Warn the user that this plugin executes code in the COM component
 
-	if(askyn_c(1, "Please be aware that this plugin will execute code in the "
+	if(ask_yn(1, "Please be aware that this plugin will execute code in the "
 				  "COM component. "
 				  "Do you want to apply the plugin ?") <= 0 )
-		return;
+		return false;
 
 	// The results will be better if initial autoanalysis is finished,
 	// warn the user if necessary
 
-	if(!autoIsOk())
+	if(!auto_is_ok())
 	{
-		if(askyn_c(-1, "The analysis has not finished yet. "
+		if(ask_yn(-1, "The analysis has not finished yet. "
 					   "The results would be better if you wait till its finished. "
 					   "Do you want to apply the plugin now?") <= 0 )
-		return;
+		return false;
 	}
 
 	// initialize 
 
 	if(!InitProcessTypeLib())
-		return;
+		return false;
 
 	// rest counters
 
@@ -564,8 +554,8 @@ void plugin_main(int)
     char szInputPath[_MAX_PATH];
 	get_input_file_path(szInputPath, sizeof(szInputPath));
 	input = szInputPath;
-    if ( !qfileexist(input) && (input = askfile_c(false, input, "Please specify the input file")) == NULL )
-        return;
+    if ( !qfileexist(input) && (input = ask_file(false, input, "Please specify the input file")) == NULL )
+        return false;
 
 	// tell IDA to display a message box
 
@@ -622,15 +612,14 @@ void plugin_main(int)
 // callui(ui_get_hwnd) or getvcl() can be used.	See kernwin.hpp for
 // detail.
 
-int init(void)
+int idaapi init(void)
 {
 #if SHOW_DBG
 	my_warning("init() called.");
 #endif
 
 	// determine TXT/GUI version
-
-	g_bGUIVersion = (callui(ui_get_hwnd).vptr != NULL);
+	g_bGUIVersion = is_idaq();
 
 	if (inf.filetype != f_PE) 
 		return PLUGIN_SKIP; // only for PE files
@@ -645,7 +634,7 @@ int init(void)
 //      IDA will call this function when the user asks to exit.
 //      This function won't be called in the case of emergency exits.
 
-void term(void)
+void idaapi term(void)
 {
 #if SHOW_DBG
 	my_warning("term() called.");

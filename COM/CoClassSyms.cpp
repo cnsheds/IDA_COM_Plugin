@@ -283,9 +283,8 @@ void EnumTypeInfoMembers( 	LPTYPEINFO pITypeInfo,	// The ITypeInfo to enum.
 	wsprintfA(pszInterfaceNameAnsi, "%ls", pszInterfaceName);
 
 	// check if interface should be proccessed
-
-	if(!CheckInterface(pITypeInfo, pTypeAttr, pszInterfaceNameAnsi))
-		return;
+ 	if(!CheckInterface(pITypeInfo, pTypeAttr, pszInterfaceNameAnsi))
+ 		return;
 
 	// Enumerate through each method, obtain it's name, address, and ship the
 	// info off to CoClassSymsAddSymbol()
@@ -357,7 +356,7 @@ void GetTypeInfoName( LPTYPEINFO pITypeInfo, LPTSTR pszName, LPTSTR pszComment, 
 
 	// Make a copy so that we can free the BSTR	allocated by ::GetDocumentation
 	lstrcpyW( pszName, pszTypeInfoName );
-	if(pszComment)
+	if(pszComment && pszDocString)
 		lstrcpyW( pszComment, pszDocString );
 
 	// Free the BSTR allocated by ::GetDocumentation
