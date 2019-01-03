@@ -134,6 +134,9 @@ inline BOOL isEa(flags_t f)
 #endif
 }
 
+std::string MBCS2UTF8(char *szGbk);
+std::string UTF82MBCS(char *szUtf8);
+
 uint str2int(qstring& str);
 void get_string(ea_t ea, qstring &strdst);
 qstring get_expr_name(cexpr_t *e);

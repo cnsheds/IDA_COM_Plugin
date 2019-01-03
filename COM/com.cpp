@@ -130,7 +130,10 @@ Show error message, called from	ShowHresultError() in CoClassSyms
 
 void ShowError(const char *message)
 {
-	my_warning("%s", message);
+	if (IDA_SDK_VERSION >= 700)
+		my_warning("%s", MBCS2UTF8((char*)message).c_str());
+	else
+		my_warning("%s", message);
 }
 
 /*----------------------------------------------------------------------
